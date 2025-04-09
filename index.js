@@ -7,17 +7,21 @@ app.use(bodyParser.json());
 
 const CHANNEL_ACCESS_TOKEN = process.env.CHANNEL_ACCESS_TOKEN;
 
-// 条件分岐による簡易予想データ（今後ここをAIにしていく）
-const predictions = {
-  '住之江12R': {
-    title: '住之江12R 予想',
-    formation: '1-2-3 / 2-1-3 / 1-3-2',
-    comment: 'イン逃げ本命。波乱は少なそうなレース。'
+const examplePredictions = {
+  "住之江12R": {
+    title: "住之江12R 予想",
+    formation: "3-1-5 / 1-3-5 / 3-5-1",
+    comment: "3号艇のスタートが鋭く、まくり一発に期待！"
   },
-  '唐津12R': {
-    title: '唐津12R 予想',
-    formation: '3-4-5 / 3-5-4 / 4-3-5',
-    comment: 'センター勢の攻めに注目。まくり一発あり！'
+  "江戸川12R": {
+    title: "江戸川12R 予想",
+    formation: "1-2-4 / 2-1-4 / 1-4-2",
+    comment: "イン逃げ濃厚！差し切る展開も想定して手広く！"
+  },
+  "平和島12R": {
+    title: "平和島12R 予想",
+    formation: "4-1-6 / 4-6-1 / 1-4-6",
+    comment: "4号艇のカドまくりが決まれば波乱の展開！"
   }
 };
 
