@@ -7,23 +7,19 @@ app.use(bodyParser.json());
 
 const CHANNEL_ACCESS_TOKEN = process.env.CHANNEL_ACCESS_TOKEN;
 
-const examplePredictions = [
-  {
-    title: "住之江12R 予想",
-    formation: "3-1-5 / 1-3-5 / 3-5-1",
-    comment: "3号艇のスタートが鋭く、まくり一発に期待！"
+// 条件分岐による簡易予想データ（今後ここをAIにしていく）
+const predictions = {
+  '住之江12R': {
+    title: '住之江12R 予想',
+    formation: '1-2-3 / 2-1-3 / 1-3-2',
+    comment: 'イン逃げ本命。波乱は少なそうなレース。'
   },
-  {
-    title: "江戸川12R 予想",
-    formation: "1-2-4 / 2-1-4 / 1-4-2",
-    comment: "イン逃げ濃厚！差し切る展開も想定して手広く！"
-  },
-  {
-    title: "平和島12R 予想",
-    formation: "4-1-6 / 4-6-1 / 1-4-6",
-    comment: "4号艇のカドまくりが決まれば波乱の展開！"
+  '唐津12R': {
+    title: '唐津12R 予想',
+    formation: '3-4-5 / 3-5-4 / 4-3-5',
+    comment: 'センター勢の攻めに注目。まくり一発あり！'
   }
-];
+};
 
 app.post('/webhook', async (req, res) => {
   const events = req.body.events;
@@ -32,52 +28,35 @@ app.post('/webhook', async (req, res) => {
     if (event.type === 'message' && event.message.type === 'text') {
       const userMessage = event.message.text;
 
-      // 「〇〇場12R」のようなメッセージか確認
-      const match = userMessage.match(/^(.+?)\d{1,2}R$/);
-      if (match) {
-        const prediction = examplePredictions[Math.floor(Math.random() * examplePredictions.length)];
-
-        const replyText = `【${prediction.title}】\n買い目：${prediction.formation}\n\n${prediction.comment}`;
-
-        await axios.post(
-          'https://api.line.me/v2/bot/message/reply',
-          {
-            replyToken: event.replyToken,
-            messages: [{ type: 'text', text: replyText }],
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
-            }
-          }
-        );
+      if (predictions[userMessage]) {
+        const p = predictions[userMessage];
+        const replyText = `【${p.title}】\n買い目：${p.formation}\n\n${p.comment}`;
+        await replyMessage(event.replyToken, replyText);
       } else {
-        // それ以外は「フォーマットを教える返信」
-        await axios.post(
-          'https://api.line.me/v2/bot/message/reply',
-          {
-            replyToken: event.replyToken,
-            messages: [
-              {
-                type: 'text',
-                text: `「〇〇場12R」などの形式で送ってね！例：住之江12R`,
-              },
-            ],
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
-            }
-          }
-        );
+        const replyText = '「住之江12R」などの形式で送ってね！例：唐津12R';
+        await replyMessage(event.replyToken, replyText);
       }
     }
   }
 
   res.sendStatus(200);
 });
+
+async function replyMessage(replyToken, text) {
+  await axios.post(
+    'https://api.line.me/v2/bot/message/reply',
+    {
+      replyToken,
+      messages: [{ type: 'text', text }]
+    },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`
+      }
+    }
+  );
+}
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
