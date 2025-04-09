@@ -32,16 +32,15 @@ app.post('/webhook', async (req, res) => {
     if (event.type === 'message' && event.message.type === 'text') {
       const userMessage = event.message.text;
 
-      if (predictions[userMessage]) {
-        const p = predictions[userMessage];
-        const replyText = `【${p.title}】\n買い目：${p.formation}\n\n${p.comment}`;
-        await replyMessage(event.replyToken, replyText);
-      } else {
-        const replyText = '「住之江12R」などの形式で送ってね！例：唐津12R';
-        await replyMessage(event.replyToken, replyText);
-      }
-    }
-  }
+const prediction = examplePredictions[userMessage];
+
+if (prediction) {
+  const replyText = `【${prediction.title}】\n買い目：${prediction.formation}\n\n${prediction.comment}`;
+  await replyMessage(event.replyToken, replyText);
+} else {
+  const replyText = `ごめん！「${userMessage}」にはまだ対応してないよ！\n対応例：住之江12R、江戸川12R、平和島12R`;
+  await replyMessage(event.replyToken, replyText);
+}
 
   res.sendStatus(200);
 });
