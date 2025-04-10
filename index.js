@@ -1,13 +1,20 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
+const { Configuration, OpenAIApi } = require('openai');
 
 const app = express();
 app.use(bodyParser.json());
 
 const CHANNEL_ACCESS_TOKEN = process.env.CHANNEL_ACCESS_TOKEN;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-// Webhookエンドポイント
+const configuration = new Configuration({
+  apiKey: OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
+
+// LINE Webhookエンドポイント
 app.post('/webhook', async (req, res) => {
   const events = req.body.events;
 
@@ -18,12 +25,18 @@ app.post('/webhook', async (req, res) => {
       const match = userMessage.match(/^(.+?)12R$/);
       if (match) {
         const jyo = match[1];
-        const prediction = getPrediction(jyo);
 
-        const replyText = `【${prediction.title}】\n買い目：${prediction.formation}\n\n${prediction.comment}`;
+        // ChatGPTに予想を依頼
+        const prompt = `${jyo}12Rのボートレース予想を教えて。買い目と一言コメントをセットで答えて。`;
+        const gptRes = await openai.createChatCompletion({
+          model: 'gpt-3.5-turbo',
+          messages: [{ role: 'user', content: prompt }],
+        });
+
+        const replyText = gptRes.data.choices[0].message.content;
         await replyMessage(event.replyToken, replyText);
       } else {
-        const replyText = `「〇〇12R」って形式で送ってね！例：住之江12R`;
+        const replyText = `「〇〇12R」って送ってね！例：住之江12R`;
         await replyMessage(event.replyToken, replyText);
       }
     }
@@ -32,7 +45,7 @@ app.post('/webhook', async (req, res) => {
   res.sendStatus(200);
 });
 
-// 返信処理（共通化）
+// LINE返信用関数
 async function replyMessage(replyToken, text) {
   await axios.post(
     'https://api.line.me/v2/bot/message/reply',
@@ -47,31 +60,6 @@ async function replyMessage(replyToken, text) {
       }
     }
   );
-}
-
-// ランダム予想生成
-function getPrediction(jyo) {
-  const formations = [
-    "1-2-3 / 1-3-2 / 2-1-3",
-    "3-1-5 / 3-5-1 / 1-3-5",
-    "4-1-6 / 4-6-1 / 1-4-6",
-    "2-1-4 / 1-2-4 / 2-4-1"
-  ];
-  const comments = [
-    "イン逃げ有利な展開！",
-    "センター勢のまくり差しに注意！",
-    "4号艇のカド一撃に期待！",
-    "波乱の展開もありそう！"
-  ];
-
-  const formation = formations[Math.floor(Math.random() * formations.length)];
-  const comment = comments[Math.floor(Math.random() * comments.length)];
-
-  return {
-    title: `${jyo}12R 予想`,
-    formation,
-    comment
-  };
 }
 
 // サーバー起動
